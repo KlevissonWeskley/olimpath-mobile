@@ -1,20 +1,35 @@
-import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View } from 'react-native';
+import { Lexend_300Light, Lexend_400Regular, Lexend_500Medium, Lexend_600SemiBold, Lexend_700Bold, useFonts } from '@expo-google-fonts/lexend'
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { ActivityIndicator, PaperProvider } from 'react-native-paper';
+import { NavigationContainer } from '@react-navigation/native';
+import { Routes } from './src/routes';
+import { ClerkProvider } from '@clerk/clerk-expo';
+import { tokenCache } from '@clerk/clerk-expo/token-cache'
 
 export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.tsx to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
-}
+  const [fontsLoaded] = useFonts({
+    Lexend_300Light,
+    Lexend_400Regular,
+    Lexend_500Medium,
+    Lexend_600SemiBold,
+    Lexend_700Bold,
+  })
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
+  const CLERK_PUBLISHABLE_KEY = process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY as string
+
+  return (
+    <NavigationContainer>
+      <PaperProvider>
+        <SafeAreaProvider>
+          { fontsLoaded ? (
+            <ClerkProvider tokenCache={tokenCache} publishableKey={CLERK_PUBLISHABLE_KEY}>
+              <Routes />
+            </ClerkProvider>
+          ) : (
+            <ActivityIndicator style={{ flex: 1 }} />
+          )}
+        </SafeAreaProvider>
+      </PaperProvider>
+    </NavigationContainer>
+  )
+}

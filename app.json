@@ -1,16 +1,17 @@
 {
   "expo": {
-    "name": "olim-path",
+    "name": "OlimPath",
     "slug": "olim-path",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
+    "scheme": "olimpath",
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000C1C"
     },
     "ios": {
       "supportsTablet": true
@@ -18,11 +19,21 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
-      }
+        "backgroundColor": "#000C1C"
+      },
+      "package": "com.klevisson.ws.olimpath"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "eae0787d-0234-43ca-9d4f-7634a2e99a20"
+      }
+    },
+    "plugins": [
+      "expo-asset"
+    ],
+    "owner": "klevisson.ws"
   }
 }
