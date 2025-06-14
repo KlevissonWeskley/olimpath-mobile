@@ -9,6 +9,9 @@ import { Controller, useForm } from "react-hook-form";
 import { useState } from "react";
 import { GoogleGenAI } from "@google/genai";
 import Markdown from 'react-native-markdown-display'
+import { api } from "../../lib/axios";
+import { useUser } from "@clerk/clerk-expo";
+import { prompt } from "../../constants/prompt";
 
 type FormData = {
     question: string
@@ -25,43 +28,90 @@ export function NewChat() {
     const [loadingAnswer, setLoadingAnswer] = useState(false)
     const [chatHistory, setChatHistory] = useState<ChatEntry[]>([])
     const navigation = useNavigation()
+    const { user } = useUser()
 
     const { control, handleSubmit, reset, formState: { errors } } = useForm<FormData>()
 
-    const ai = new GoogleGenAI({ apiKey: 'AIzaSyAuyrcTcl6HE8CIxaj3jskqEZb5J4TELhg' })
+    const API_KEY = process.env.EXPO_PUBLIC_API_KEY_GEMINI
+
+    const ai = new GoogleGenAI({ apiKey: API_KEY })
 
     async function onSubmit(data: FormData) {
-        setUserQuestion(data.question)
+        const { question } = data
 
         reset()
         setLoadingAnswer(true)
 
-        setChatHistory(prev => [...prev, { question: data.question, answer: undefined }])
+        // Atualiza o histórico localmente com a pergunta
+        setChatHistory(prev => [...prev, { question, answer: undefined }])
 
+        let createdChatId = ''
+        try {
+            // 1. Cria o chat
+            console.time('criando chat...')
+            const chatRes = await api.post('chat/create', {
+                userId: user?.id, 
+                title: null,
+            })
+            console.timeEnd('chat criado...')
+
+            createdChatId = chatRes.data.chat.id
+
+            // 2. Salva a pergunta como mensagem do USER
+            console.time('salvando pergunta...')
+            await api.post(`chat/${createdChatId}/message`, {
+                content: question,
+                sender: 'USER',
+            })
+            console.timeEnd('pergunta salva...')
+        } catch (err: any) {
+            console.error('❌ Erro ao criar chat ou mensagem do usuário:')
+            console.error('Mensagem:', err.message)
+
+            if (err.response) {
+                console.error('Status:', err.response.status)
+                console.error('Dados:', err.response.data)
+                console.error('Headers:', err.response.headers)
+            } else if (err.request) {
+                console.error('Request feita mas sem resposta:', err.request)
+            } else {
+                console.error('Erro ao configurar requisição:', err.message)
+            }
+
+            setLoadingAnswer(false)
+            return
+        }
+
+        // 3. Gera resposta da IA
+        console.time('gerando resposta...')
         const response = await ai.models.generateContent({
             model: 'gemini-2.0-flash',
-            contents: `
-                Você é Olimp, uma mentora digital especializada em olimpíadas acadêmicas como OBMEP, ONC, OBQ, OBF, OBA e outras. Seu papel é ajudar estudantes do ensino médio a entenderem melhor os conteúdos cobrados nessas competições.
-
-                Responda sempre de forma clara, resumida e didática, como se estivesse explicando para um estudante curioso que quer aprender de verdade. Use uma linguagem descontraída e acessível, sem perder a precisão.
-
-                Se a pergunta for mais técnica ou exigir mais profundidade, aprofunde a explicação sem enrolar. Use exemplos simples sempre que possível. Evite frases genéricas como “sou especialista em...”, apenas demonstre seu conhecimento com boas explicações.
-
-                Quando a pergunta não for relacionada a olimpíadas, tente ao máximo direcionar a resposta de forma que ajude o estudante no seu processo de aprendizagem.
-
-                Se perguntarem sobre sua origem, responda com criatividade e bom humor, mas mantenha o foco sempre no apoio ao estudante.
-
-                A pergunta é: ${data.question}
-            `
+            contents: `${prompt} A pergunta é: ${question}`
         })
 
+        const aiText = response.text
+        console.timeEnd('resposta gerada...')
+
+        // 4. Salva a resposta da IA como mensagem da AI
+        try {
+            console.time('salvando resposta...')
+            await api.post(`chat/${createdChatId}/message`, {
+                content: aiText,
+                sender: 'AI',
+            })
+            console.timeEnd('resposta salva...')
+        } catch (err) {
+            console.error('Erro ao salvar resposta da IA:', err)
+        }
+
+        // 5. Atualiza o histórico local com a resposta
         setChatHistory(prev => {
             const updated = [...prev]
-            updated[updated.length - 1].answer = response.text
+            updated[updated.length - 1].answer = aiText
             return updated
         })
 
-        setAiAnswer(response.text)
+        setAiAnswer(aiText)
         setLoadingAnswer(false)
     }
 

@@ -5,6 +5,8 @@ import { NavigationContainer } from '@react-navigation/native';
 import { Routes } from './src/routes';
 import { ClerkProvider } from '@clerk/clerk-expo';
 import { tokenCache } from '@clerk/clerk-expo/token-cache'
+import { RegisterContextProvider } from './src/context/RegisterContext';
+import Toast from 'react-native-toast-message'
 
 export default function App() {
   const [fontsLoaded] = useFonts({
@@ -22,9 +24,12 @@ export default function App() {
       <PaperProvider>
         <SafeAreaProvider>
           { fontsLoaded ? (
-            <ClerkProvider tokenCache={tokenCache} publishableKey={CLERK_PUBLISHABLE_KEY}>
-              <Routes />
-            </ClerkProvider>
+            <RegisterContextProvider>
+                <ClerkProvider tokenCache={tokenCache} publishableKey={CLERK_PUBLISHABLE_KEY}>
+                  <Routes />
+                  <Toast />
+                </ClerkProvider>
+            </RegisterContextProvider>
           ) : (
             <ActivityIndicator style={{ flex: 1 }} />
           )}

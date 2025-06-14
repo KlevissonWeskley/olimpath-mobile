@@ -1,5 +1,4 @@
-import { Alert, Image, View } from "react-native";
-import olimPathLogo from '../../assets/olim-path.png';
+import { Alert, View } from "react-native";
 import { LoginContainer, GoogleButton, IconWrapper } from "./styles";
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { TextBase } from "../../components/text";
@@ -25,9 +24,7 @@ export function Login() {
 
     async function handleGoogleLogin() {
         try {
-            const redirectUrl = 'https://app.olimpath.online/oauth/callback';
-
-            Alert.alert(`redirect url: `, redirectUrl)
+            const redirectUrl = AuthSession.makeRedirectUri()
 
             const { createdSessionId, authSessionResult, signIn, signUp, setActive } = await startSSOFlow({
                 strategy: 'oauth_google',
@@ -35,26 +32,17 @@ export function Login() {
             })
 
             if (createdSessionId) {
-                setActive!({ session: createdSessionId })
-            } else {
-
+                await setActive!({ session: createdSessionId })
             }
         } catch (err) {
-            console.error(JSON.stringify(err, null, 2))
+            console.error("Erro no login com Google:", JSON.stringify(err, null, 2))
+            Alert.alert("Erro", "Não foi possível fazer login com o Google.")
         }
     }
 
     return (
         <LoginContainer>
             <View style={{ gap: 50 }}>
-                {/* <View>
-                    <Image 
-                        source={olimPathLogo}
-                        style={{ width: 200, height: 200 }}
-                        resizeMode='contain'
-                    />
-                </View> */}
-
                 <View>
                     <TextBase size={32} color={COLORS.purple200} variant="bold">Fazer login</TextBase>
                     <TextBase size={16} color={COLORS.gray300}>O caminho para a vitória começa com o primeiro passo</TextBase>

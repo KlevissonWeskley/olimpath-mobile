@@ -1,56 +1,90 @@
-import { useState } from "react"
-import { TouchableOpacity, Text, View } from "react-native"
+import { useEffect, useState } from "react"
+import { TouchableOpacity, Text, View, ActivityIndicator } from "react-native"
 import { SafeAreaView } from "react-native-safe-area-context"
 import { MaterialCommunityIcons } from "@expo/vector-icons"
-import { quiz } from "../../../quiz"
 import { useNavigation } from "@react-navigation/native"
 import { QuizContainer } from "./styles"
 import { TextBase } from "../../components/text"
 import { COLORS } from "../../constants/colors"
 import { FinishedQuiz } from "./components/finished-quiz"
+import { api } from "../../lib/axios"
+
+type QuizProps = {
+  quizTitle: string
+  todayQuizTitle: string
+  description: string
+  questions: {
+    id: number
+    question: string
+    options: string[]
+    correctAnswer: string
+  }[]
+}
 
 export function Quiz() {
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState<string[]>(Array(quiz.questions.length).fill(null));
-  const [showResult, setShowResult] = useState(false);
+  const [quizData, setQuizData] = useState<QuizProps>()
+  const [loading, setLoading] = useState(true)
+  const [currentIndex, setCurrentIndex] = useState(0)
+  const [answers, setAnswers] = useState<string[]>([])
+  const [showResult, setShowResult] = useState(false)
 
-  const navigation = useNavigation();
-  const currentQuestion = quiz.questions[currentIndex];
-  const selectedOption = answers[currentIndex];
+  const navigation = useNavigation()
+
+  useEffect(() => {
+    async function fetchQuiz() {
+      try {
+        const response = await api.get('/quiz/today')
+        setQuizData(response.data.quiz)
+        setAnswers(Array(response.data.quiz.questions.length).fill(null))
+      } catch (err) {
+        console.error('Erro ao buscar quiz:', err)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchQuiz()
+  }, [])
+
+  if (loading || !quizData) {
+    return (
+      <SafeAreaView style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: COLORS.gray900 }}>
+        <ActivityIndicator size="large" color={COLORS.purple500} />
+      </SafeAreaView>
+    )
+  }
+
+  const currentQuestion = quizData.questions[currentIndex]
+  const selectedOption = answers[currentIndex]
+  const score = answers.filter((a, i) => a === quizData.questions[i].correctAnswer).length
+  const isLastQuestion = currentIndex === quizData.questions.length - 1
 
   function handleAnswer(option: string) {
-    const updatedAnswers = [...answers];
-    updatedAnswers[currentIndex] = option;
-    setAnswers(updatedAnswers);
+    const updatedAnswers = [...answers]
+    updatedAnswers[currentIndex] = option
+    setAnswers(updatedAnswers)
   }
 
   function goToNext() {
-    if (currentIndex < quiz.questions.length - 1) {
-      setCurrentIndex(prev => prev + 1);
+    if (isLastQuestion) {
+      setShowResult(true)
     } else {
-      setShowResult(true);
+      setCurrentIndex(prev => prev + 1)
     }
   }
 
   function goToPrevious() {
-    if (currentIndex > 0) {
-      setCurrentIndex(prev => prev - 1);
-    }
+    if (currentIndex > 0) setCurrentIndex(prev => prev - 1)
   }
 
   function getOptionStyle(option: string) {
     return {
       backgroundColor: selectedOption === option ? "#d4edda" : COLORS.gray100
-    };
+    }
   }
 
-  const score = answers.filter((answer, index) => answer === quiz.questions[index].correctAnswer).length;
-  const isLastQuestion = currentIndex === quiz.questions.length - 1;
-
   if (showResult) {
-    return (
-      <FinishedQuiz score={score} />
-    )
+    return <FinishedQuiz score={score} total={quizData.questions.length} />
   }
 
   return (
@@ -59,7 +93,7 @@ export function Quiz() {
         <TouchableOpacity onPress={() => navigation.goBack()}>
           <MaterialCommunityIcons name="arrow-left" size={30} color={COLORS.gray100} />
         </TouchableOpacity>
-        <TextBase variant="semiBold" size={18} color={COLORS.gray100}>{quiz.quizTitle}</TextBase>
+        <TextBase variant="semiBold" size={18} color={COLORS.gray100}>{quizData.quizTitle}</TextBase>
       </View>
 
       <QuizContainer>
@@ -113,5 +147,5 @@ export function Quiz() {
         </View>
       </QuizContainer>
     </SafeAreaView>
-  );
+  )
 }

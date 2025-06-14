@@ -9,6 +9,7 @@ import { useEffect, useState } from "react"
 import { AccordionContainer, ButtonGenerateSimulation, OlympiadChosenContainer } from "./styles"
 import { api } from "../../lib/axios"
 import { ActivityIndicator } from "react-native-paper"
+import { useUser } from "@clerk/clerk-expo"
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental &&
@@ -42,9 +43,12 @@ export function OlympiadChosen() {
   const route = useRoute()
   const { olympiadId } = route.params as RouteParams
 
+  const { user } = useUser()
+
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
   const [checkedVideos, setCheckedVideos] = useState<string[]>([])
   const [olympiad, setOlympiad] = useState<OlympiadProps>()
+  const [watchedVideos, setWatchedVideos] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
 
   const toggleExpand = (index: number) => {
@@ -73,8 +77,33 @@ export function OlympiadChosen() {
     }
   }
 
+  async function fetchWatchedVideos(userId?: string) {
+    try {
+      const response = await api.get(`/users/${userId}/olympiads/${olympiadId}/watched`)
+      setWatchedVideos(response.data.watchedVideos)
+    } catch (err) {
+      console.error('Erro ao buscar vídeos assistidos:', err)
+    }
+  } 
+
+  async function markVideoAsWatched(videoId: string) {
+    if (!user?.id) return
+
+    try {
+      await api.post(`/users/${user.id}/videos/${videoId}/view`)
+      setWatchedVideos(prev => [...prev, videoId]) 
+    } catch (err) {
+      console.error('Erro ao marcar vídeo como assistido:', err)
+    }
+  }
+
   useEffect(() => {
-    getOlympiad()
+    async function loadData() {
+      await getOlympiad()
+      await fetchWatchedVideos(user?.id)
+    }
+
+    loadData()
   }, [olympiad?.name])
 
   return (
@@ -126,16 +155,19 @@ export function OlympiadChosen() {
                       key={video.url}
                       style={{ flexDirection: 'row', alignItems: 'center', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#eee' }}
                     >
-                      <TouchableOpacity onPress={() => toggleCheckbox(video.url)} style={{ marginRight: 10 }}>
+                      <TouchableOpacity style={{ marginRight: 10 }}>
                         <Ionicons
-                          name={checkedVideos.includes(video.url) ? 'checkbox' : 'square-outline'}
+                          name={watchedVideos.includes(video.id) ? 'checkbox' : 'square-outline'}
                           size={24}
                           color={COLORS.purple300}
                         />
                       </TouchableOpacity>
 
                       <TouchableOpacity
-                        onPress={() => navigation.navigate('videoLesson', { linkVideo: video.url })}
+                        onPress={async () => {
+                          await markVideoAsWatched(video.id)
+                          navigation.navigate('videoLesson', { linkVideo: video.url })
+                        }}
                         style={{ flex: 1 }}
                       >
                         <TextBase size={14} color={COLORS.gray100}>{video.title}</TextBase>
