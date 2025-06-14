@@ -2,10 +2,21 @@ import React from 'react'
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs'
 import { Library } from '../screens/library'
 import { MaterialCommunityIcons } from '@expo/vector-icons'
-import { OlympiadsStack } from './olympiads.stack'
+import { OlympiadsStack, OlympiadsStackProps } from './olympiads.stack'
 import { ChatStack } from './chat.stack'
 import { COLORS } from '../constants/colors'
 import { HomeStack } from './home.stack'
+import type { NavigationProp } from '@react-navigation/native'
+
+
+type TabRoutes = {
+  Home: undefined
+  Olimpíadas: { screen: keyof OlympiadsStackProps; params?: any }
+  Materiais: undefined
+  Chat: undefined
+}
+
+export type RootNavigation = NavigationProp<TabRoutes>
 
 const Tab = createBottomTabNavigator()
 

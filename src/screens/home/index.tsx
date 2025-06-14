@@ -7,11 +7,11 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { COLORS } from '../../constants/colors'
 import { AnimatedCircularProgress } from 'react-native-circular-progress'
 
-import { useNavigation } from '@react-navigation/native'
+import { useFocusEffect, useNavigation } from '@react-navigation/native'
 import { HomeNavigatiorRoutesProps } from '../../routes/home.stack'
 import { useUser } from '@clerk/clerk-expo'
 import { useRegister } from '../../hooks/useRegister'
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { api } from '../../lib/axios'
 
 import obmepLogo from '../../assets/obmep-logo.png'
@@ -27,6 +27,7 @@ import obaLogo from '../../assets/oba-logo.png'
 import oncLogo from '../../assets/onc-logo.png'
 import opLogo from '../../assets/op-logo.png'
 import Toast from 'react-native-toast-message'
+import { RootNavigation } from '../../routes/app.routes'
 
 type RecentWatchedProps = {
     olympiadId: string
@@ -40,6 +41,7 @@ export function Home() {
     const { user, isLoaded } = useUser()
     const { signInWithClerk } = useRegister()
     const [recentWatched, setRecentWatched] = useState<RecentWatchedProps[]>([])
+    const rootNavigation = useNavigation<RootNavigation>()
 
     const olympiadIcons: Record<string, any> = {
         OBMEP: obmepLogo,
@@ -58,7 +60,7 @@ export function Home() {
 
     async function getOlympiadsRecents() {
         try {
-            const response = await api.get(`users/${user?.id}/recent-watched`)
+            const response = await api.get(`/users/${user?.id}/recent-watched`)
 
             setRecentWatched(response.data)
         } catch (err: any) {
@@ -75,9 +77,11 @@ export function Home() {
         }
     }
 
-    useEffect(() => {
-        getOlympiadsRecents()
-    }, [])
+    useFocusEffect(
+        useCallback(() => {
+            getOlympiadsRecents()
+        }, [])
+    )
 
     useEffect(() => {
         if (isLoaded && user && user.primaryEmailAddress?.emailAddress) {
@@ -152,7 +156,12 @@ export function Home() {
 
                                 return (
                                     <View style={{ marginBottom: 24 }} key={olympiad.olympiadId}>
-                                        <OlympiadRecent>
+                                        <OlympiadRecent onPress={() => rootNavigation.navigate('Olimpíadas', {
+                                            screen: 'olympiadChosen',
+                                            params: {
+                                                olympiadId: olympiad.olympiadId,
+                                            }
+                                        })}>
                                             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
                                                 <Image 
                                                     source={olympiadIcons[olympiad.name] ?? opLogo}

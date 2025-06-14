@@ -6,7 +6,7 @@ import { MaterialCommunityIcons } from '@expo/vector-icons'
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useNavigation } from "@react-navigation/native";
 import { Controller, useForm } from "react-hook-form";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { GoogleGenAI } from "@google/genai";
 import Markdown from 'react-native-markdown-display'
 import { api } from "../../lib/axios";
@@ -29,6 +29,7 @@ export function NewChat() {
     const [chatHistory, setChatHistory] = useState<ChatEntry[]>([])
     const navigation = useNavigation()
     const { user } = useUser()
+    const [chatId, setChatId] = useState<string | null>(null)
 
     const { control, handleSubmit, reset, formState: { errors } } = useForm<FormData>()
 
@@ -36,83 +37,64 @@ export function NewChat() {
 
     const ai = new GoogleGenAI({ apiKey: API_KEY })
 
+    useEffect(() => {
+        async function initChat() {
+            try {
+                const res = await api.post('/chat/create', {
+                    userId: user?.id,
+                    title: null,
+                })
+                setChatId(res.data.chat.id)
+            } catch (err) {
+                console.error('Erro ao criar chat:', err)
+            }
+        }
+
+        initChat()
+    }, [])
+
     async function onSubmit(data: FormData) {
-        const { question } = data
+        if (!chatId) return;
 
-        reset()
-        setLoadingAnswer(true)
+        const { question } = data;
 
-        // Atualiza o histórico localmente com a pergunta
-        setChatHistory(prev => [...prev, { question, answer: undefined }])
+        reset();
+        setLoadingAnswer(true);
 
-        let createdChatId = ''
+        const newEntry: ChatEntry = { question, answer: undefined };
+        setChatHistory(prev => [...prev, newEntry]);
+
+        const entryIndex = chatHistory.length;
+
         try {
-            // 1. Cria o chat
-            console.time('criando chat...')
-            const chatRes = await api.post('chat/create', {
-                userId: user?.id, 
-                title: null,
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.0-flash',
+                contents: `${prompt} A pergunta é: ${question}`
             })
-            console.timeEnd('chat criado...')
 
-            createdChatId = chatRes.data.chat.id
+            const aiText = response.text;
 
-            // 2. Salva a pergunta como mensagem do USER
-            console.time('salvando pergunta...')
-            await api.post(`chat/${createdChatId}/message`, {
+            setChatHistory(prev => {
+                const updated = [...prev];
+                updated[entryIndex] = { ...updated[entryIndex], answer: aiText };
+                return updated;
+            });
+
+            api.post(`/chat/${chatId}/message`, {
                 content: question,
                 sender: 'USER',
-            })
-            console.timeEnd('pergunta salva...')
-        } catch (err: any) {
-            console.error('❌ Erro ao criar chat ou mensagem do usuário:')
-            console.error('Mensagem:', err.message)
+            }).catch(err => console.error('Erro ao salvar pergunta:', err));
 
-            if (err.response) {
-                console.error('Status:', err.response.status)
-                console.error('Dados:', err.response.data)
-                console.error('Headers:', err.response.headers)
-            } else if (err.request) {
-                console.error('Request feita mas sem resposta:', err.request)
-            } else {
-                console.error('Erro ao configurar requisição:', err.message)
-            }
-
-            setLoadingAnswer(false)
-            return
-        }
-
-        // 3. Gera resposta da IA
-        console.time('gerando resposta...')
-        const response = await ai.models.generateContent({
-            model: 'gemini-2.0-flash',
-            contents: `${prompt} A pergunta é: ${question}`
-        })
-
-        const aiText = response.text
-        console.timeEnd('resposta gerada...')
-
-        // 4. Salva a resposta da IA como mensagem da AI
-        try {
-            console.time('salvando resposta...')
-            await api.post(`chat/${createdChatId}/message`, {
+            api.post(`/chat/${chatId}/message`, {
                 content: aiText,
                 sender: 'AI',
-            })
-            console.timeEnd('resposta salva...')
+            }).catch(err => console.error('Erro ao salvar resposta:', err));
+
         } catch (err) {
-            console.error('Erro ao salvar resposta da IA:', err)
+            console.error('Erro ao gerar resposta da IA:', err);
         }
 
-        // 5. Atualiza o histórico local com a resposta
-        setChatHistory(prev => {
-            const updated = [...prev]
-            updated[updated.length - 1].answer = aiText
-            return updated
-        })
-
-        setAiAnswer(aiText)
-        setLoadingAnswer(false)
+        setLoadingAnswer(false);
     }
 
     return (

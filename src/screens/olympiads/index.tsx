@@ -53,7 +53,7 @@ export function Olympiads() {
     async function getOlympiads() {
         try {
             setIsLoading(true)
-            const response = await api.get('olympiads/getAll')
+            const response = await api.get('/olympiads/getAll')
 
             setOlympiadsData(response.data.olympiads)
         } catch (err) {

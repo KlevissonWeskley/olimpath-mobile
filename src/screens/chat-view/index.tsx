@@ -44,7 +44,7 @@ export function ChatView() {
 
   async function fetchMessages() {
     try {
-      const res = await api.get(`chat/${chatId}`)
+      const res = await api.get(`/chat/${chatId}`)
       setMessages(res.data.chat.messages)
     } catch (err) {
       console.error("Erro ao buscar mensagens:", err)
@@ -79,7 +79,7 @@ export function ChatView() {
     ])
     try {
         // 1. Salva a pergunta do usuário
-        await api.post(`chat/${chatId}/message`, {
+        await api.post(`/chat/${chatId}/message`, {
             content,
             sender: "USER"
         })
@@ -97,7 +97,7 @@ export function ChatView() {
         const aiText = response.text
 
         // 3. Salva a resposta da IA
-        await api.post(`chat/${chatId}/message`, {
+        await api.post(`/chat/${chatId}/message`, {
             content: aiText,
             sender: "AI"
         })

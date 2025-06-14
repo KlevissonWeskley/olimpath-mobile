@@ -10,6 +10,7 @@ import { AccordionContainer, ButtonGenerateSimulation, OlympiadChosenContainer }
 import { api } from "../../lib/axios"
 import { ActivityIndicator } from "react-native-paper"
 import { useUser } from "@clerk/clerk-expo"
+import { LoadingProgressModal } from "../../components/loading-progress-modal"
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental &&
@@ -46,28 +47,24 @@ export function OlympiadChosen() {
   const { user } = useUser()
 
   const [expandedIndex, setExpandedIndex] = useState<number | null>(null)
-  const [checkedVideos, setCheckedVideos] = useState<string[]>([])
   const [olympiad, setOlympiad] = useState<OlympiadProps>()
   const [watchedVideos, setWatchedVideos] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
+  const [showProgress, setShowProgress] = useState(false)
 
   const toggleExpand = (index: number) => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut)
     setExpandedIndex(expandedIndex === index ? null : index)
   }
 
-  const toggleCheckbox = (link: string) => {
-    if (checkedVideos.includes(link)) {
-      setCheckedVideos(prev => prev.filter(item => item !== link))
-    } else {
-      setCheckedVideos(prev => [...prev, link])
-    }
+  function handleGenerateSimulado() {
+    setShowProgress(true)
   }
 
   async function getOlympiad() {
     try {
       setIsLoading(true)
-      const response = await api.get(`olympiads/getById/${olympiadId}`)
+      const response = await api.get(`/olympiads/getById/${olympiadId}`)
 
       setOlympiad(response.data.olympiad) 
     } catch (err) {
@@ -129,7 +126,7 @@ export function OlympiadChosen() {
             </View>
 
             <View>
-              <ButtonGenerateSimulation>
+              <ButtonGenerateSimulation onPress={handleGenerateSimulado}>
                 <TextBase color={COLORS.white} variant="semiBold" style={{ textAlign: 'center' }}>Gerar Simulado</TextBase>
               </ButtonGenerateSimulation>
             </View>
@@ -180,6 +177,15 @@ export function OlympiadChosen() {
           ))}
         </ScrollView>
       )}
+
+      <LoadingProgressModal
+        visible={showProgress}
+        onFinish={() => {
+          setShowProgress(false)
+          navigation.navigate('simulated', { olympiadId: olympiadId })
+        }}
+      />
+
     </OlympiadChosenContainer>
   )
 }

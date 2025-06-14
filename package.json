@@ -37,7 +37,8 @@
     "react-native-svg": "15.8.0",
     "react-native-toast-message": "^2.3.0",
     "react-native-webview": "13.12.5",
-    "styled-components": "^6.1.18"
+    "styled-components": "^6.1.18",
+    "expo-dev-client": "~5.0.20"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",

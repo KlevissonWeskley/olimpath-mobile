@@ -13,6 +13,20 @@ type FinishedQuizProps = {
 export function FinishedQuiz({ score, total }: FinishedQuizProps) {
   const navigation = useNavigation()
 
+  const getMessage = () => {
+    const percentage = (score / total) * 100
+
+    if (percentage === 100) {
+      return "🎉 Parabéns! Você gabaritou! 🏆"
+    } else if (percentage >= 80) {
+      return "🔥 Mandou bem! Quase perfeito. 👏"
+    } else if (percentage >= 50) {
+      return "💪 Bom trabalho! Dá pra melhorar. 😉"
+    } else {
+      return "😓 Não desanima! Bora estudar mais e tentar de novo. 📚"
+    }
+  }
+
   return (
     <FinishedQuizContainer>
       <CardFinishedQuiz>
@@ -22,11 +36,15 @@ export function FinishedQuiz({ score, total }: FinishedQuizProps) {
         />
 
         <TextBase variant="bold" size={22} style={{ marginTop: 20 }} color={COLORS.purple200}>
-          Quiz Finalizado!
+          Finalizado!
         </TextBase>
 
         <TextBase size={18} style={{ marginTop: 10 }} color={COLORS.purple100}>
           Você acertou {score} de {total} perguntas.
+        </TextBase>
+
+        <TextBase size={16} style={{ marginTop: 12, textAlign: 'center' }} color={COLORS.gray100}>
+          {getMessage()}
         </TextBase>
 
         <TouchableOpacity

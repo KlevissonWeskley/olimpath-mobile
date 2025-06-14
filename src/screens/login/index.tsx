@@ -6,14 +6,12 @@ import { COLORS } from "../../constants/colors";
 
 import * as WebBrowser from 'expo-web-browser'
 import { useEffect } from "react";
-import { useSSO } from "@clerk/clerk-expo";
+import { useOAuth } from "@clerk/clerk-expo";
 import * as AuthSession from 'expo-auth-session'
 
 WebBrowser.maybeCompleteAuthSession()
 
 export function Login() {
-    const { startSSOFlow } = useSSO()
-
     useEffect(() => {
         WebBrowser.warmUpAsync()
 
@@ -22,21 +20,21 @@ export function Login() {
         }
     }, [])
 
+    const { startOAuthFlow } = useOAuth({ 
+        strategy: 'oauth_google',
+        redirectUrl: 'olimpath://oauth-native-callback'
+    })
+
     async function handleGoogleLogin() {
         try {
-            const redirectUrl = AuthSession.makeRedirectUri()
+            const { createdSessionId, setActive } = await startOAuthFlow();
 
-            const { createdSessionId, authSessionResult, signIn, signUp, setActive } = await startSSOFlow({
-                strategy: 'oauth_google',
-                redirectUrl,
-            })
-
-            if (createdSessionId) {
-                await setActive!({ session: createdSessionId })
+            if (createdSessionId && setActive) {
+                await setActive({ session: createdSessionId })
             }
-        } catch (err) {
-            console.error("Erro no login com Google:", JSON.stringify(err, null, 2))
-            Alert.alert("Erro", "Não foi possível fazer login com o Google.")
+        } catch (err: any) {
+            console.error("Erro no login com Google:", err);
+            Alert.alert("Erro", err?.message || "Não foi possível fazer login com o Google.");
         }
     }
 

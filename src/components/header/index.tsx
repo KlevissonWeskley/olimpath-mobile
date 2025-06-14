@@ -28,7 +28,7 @@ export function Header() {
                     />
                 )}
 
-                <TextBase variant="bold" size={22} color={COLORS.gray100}>{user?.fullName}</TextBase>
+                <TextBase variant="bold" size={22} color={COLORS.gray100}>{user?.firstName}</TextBase>
             </UserInfo>
 
             <TouchableOpacity onPress={() => setIsModalVisible(true)}>

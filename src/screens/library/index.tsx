@@ -11,7 +11,7 @@ import { api } from '../../lib/axios'
 type PdfMaterial = {
   name: string
   driveURL: string
-  year?: string
+  year?: string | number
 }
 
 type MaterialItem = {
@@ -19,10 +19,13 @@ type MaterialItem = {
   pdfs: PdfMaterial[]
 }
 
+type PdfWithOlympiad = PdfMaterial & { olympiad: string }
+
 export function Library() {
   const [materials, setMaterials] = useState<MaterialItem[]>([])
   const [selectedFilter, setSelectedFilter] = useState<string | null>('OBMEP')
   const [isLoading, setIsLoading] = useState(true)
+  const [searchText, setSearchText] = useState('')
 
   useEffect(() => {
     async function fetchMaterials() {
@@ -39,8 +42,21 @@ export function Library() {
     fetchMaterials()
   }, [])
 
-  const olympiads = materials.map(item => item.olympiad)
-  const selectedMaterials = materials.find(m => m.olympiad === selectedFilter)
+  const allPdfs: PdfWithOlympiad[] = materials.flatMap(material =>
+    material.pdfs.map(pdf => ({
+      ...pdf,
+      olympiad: material.olympiad,
+    }))
+  )
+
+  const filteredPdfs: PdfWithOlympiad[] = searchText.trim() !== ''
+    ? allPdfs.filter(pdf =>
+        pdf.name.toLowerCase().includes(searchText.toLowerCase())
+      )
+    : materials.find(m => m.olympiad === selectedFilter)?.pdfs.map(pdf => ({
+        ...pdf,
+        olympiad: selectedFilter!,
+      })) ?? []
 
   if (isLoading) {
     return (
@@ -57,46 +73,58 @@ export function Library() {
 
         <Input>
           <TextInput
-            placeholder="Buscar livro"
+            placeholder="Buscar material"
             autoCapitalize="none"
-            style={{ flex: 1 }}
+            style={{ flex: 1, color: COLORS.gray100 }}
             placeholderTextColor={COLORS.gray100}
+            value={searchText}
+            onChangeText={setSearchText}
           />
           <FontAwesome6 name="magnifying-glass" color={COLORS.gray100} size={30} />
         </Input>
 
-        <TextBase variant='bold' size={18} color={COLORS.gray100}>Filtrar</TextBase>
+        {searchText.trim() === '' && (
+          <>
+            <TextBase variant='bold' size={18} color={COLORS.gray100}>Filtrar</TextBase>
 
-        <FlatList
-          data={olympiads}
-          keyExtractor={(item) => item}
-          renderItem={({ item }) => (
-            <Filter
-              item={item}
-              isSelected={item === selectedFilter}
-              onPress={() => setSelectedFilter(item)}
+            <FlatList
+              data={materials.map(m => m.olympiad)}
+              keyExtractor={(item) => item}
+              renderItem={({ item }) => (
+                <Filter
+                  item={item}
+                  isSelected={item === selectedFilter}
+                  onPress={() => setSelectedFilter(item)}
+                />
+              )}
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={{ gap: 16, paddingVertical: 8 }}
             />
-          )}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{ gap: 16, paddingVertical: 8 }}
-        />
+          </>
+        )}
 
         <View style={{ marginTop: 20 }}>
-          {selectedMaterials?.pdfs.map((pdf, index) => (
-            <ButtonPdf key={index} onPress={() => Linking.openURL(pdf.driveURL)}>
-              <TextBase color={COLORS.gray100}>
-                {'year' in pdf ? `${pdf.year} - ${pdf.name}` : pdf.name}
-              </TextBase>
-              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                <MaterialCommunityIcons
-                  name='file-pdf-box'
-                  size={30}
-                  color={COLORS.red300}
-                />
-              </View>
-            </ButtonPdf>
-          ))}
+            {filteredPdfs.length === 0 ? (
+              <TextBase color={COLORS.gray100}>Nenhum material encontrado</TextBase>
+            ) : (
+            filteredPdfs.map((pdf, index) => (
+              <ButtonPdf key={index} onPress={() => Linking.openURL(pdf.driveURL)}>
+                  <TextBase color={COLORS.gray100}>
+                    {pdf.year ? `${pdf.year} - ` : ''}
+                    {pdf.name}
+                  </TextBase>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <MaterialCommunityIcons
+                      name='file-pdf-box'
+                      size={30}
+                      color={COLORS.red300}
+                    />
+                  </View>
+              </ButtonPdf>
+            ))
+
+          )}
         </View>
       </ScrollView>
     </LibraryContainer>
