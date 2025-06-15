@@ -1,4 +1,7 @@
-# 📱 OlimPath - Frontend
+# 📱 OlimPath - Mobile
+
+## Link pra download do APK
+https://expo.dev/artifacts/eas/e3rEuwhgNhRBdAwgWF1W39.apk
 
 O **OlimPath** é um aplicativo mobile feito com **React Native (Expo)** voltado para ajudar alunos do ensino médio, especialmente de escolas públicas, a se prepararem para olimpíadas acadêmicas como:
 
