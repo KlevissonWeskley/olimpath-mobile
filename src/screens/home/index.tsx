@@ -36,12 +36,20 @@ type RecentWatchedProps = {
     watchedVideos: number
 }
 
+type GamificationProps = {
+    alreadyDoneToday: boolean
+    dailyQuizCount: number
+    points: number
+    rankingPosition: number
+}
+
 export function Home() {
     const navigation = useNavigation<HomeNavigatiorRoutesProps>()
     const { user, isLoaded } = useUser()
     const { signInWithClerk } = useRegister()
     const [recentWatched, setRecentWatched] = useState<RecentWatchedProps[]>([])
     const rootNavigation = useNavigation<RootNavigation>()
+    const [gamification, setGamification] = useState<GamificationProps>()
 
     const olympiadIcons: Record<string, any> = {
         OBMEP: obmepLogo,
@@ -77,9 +85,20 @@ export function Home() {
         }
     }
 
+    async function getGamification() {
+        try {
+            const response = await api.get(`/users/by-email/${user?.emailAddresses}`)
+
+            setGamification(response.data)
+        } catch (err) {
+            console.log(err)
+        }
+    }
+
     useFocusEffect(
         useCallback(() => {
             getOlympiadsRecents()
+            getGamification()
         }, [])
     )
 
@@ -105,7 +124,7 @@ export function Home() {
         <HomeContainer>
             <Header />
 
-            <TodayQuiz navigate={() => navigation.navigate('quiz')} />
+            <TodayQuiz navigate={() => navigation.navigate('quiz')} isAnswered={gamification?.alreadyDoneToday} />
 
             <ScrollView showsVerticalScrollIndicator={false}>
                 <View style={{ marginBottom: 32 }}>
@@ -119,7 +138,7 @@ export function Home() {
                                 color={COLORS.gold}
                             /> 
 
-                            <TextBase color={COLORS.gold100} variant='semiBold' style={{ textAlign: 'center' }} size={20}>100°</TextBase>
+                            <TextBase color={COLORS.gold100} variant='semiBold' style={{ textAlign: 'center' }} size={20}>{gamification?.rankingPosition}°</TextBase>
                         </CardGamification>
 
                         <CardGamification>
@@ -129,17 +148,17 @@ export function Home() {
                                 color={COLORS.gold}
                             /> 
                             
-                            <TextBase color={COLORS.gold100} variant='semiBold' style={{ textAlign: 'center' }} size={20}>1.250</TextBase>
+                            <TextBase color={COLORS.gold100} variant='semiBold' style={{ textAlign: 'center' }} size={20}>{gamification?.points}</TextBase>
                         </CardGamification>
 
                         <CardGamification>
                             <MaterialCommunityIcons 
                                 name='fire'
                                 size={50}
-                                color={COLORS.gray400}
+                                color={gamification?.alreadyDoneToday ? COLORS.gold : COLORS.gray400}
                             /> 
 
-                            <TextBase color={COLORS.gold100} variant='semiBold' style={{ textAlign: 'center' }} size={20}>5</TextBase>
+                            <TextBase color={COLORS.gold100} variant='semiBold' style={{ textAlign: 'center' }} size={20}>{gamification?.dailyQuizCount}</TextBase>
                         </CardGamification>
                     </Gamification>
                 </View>

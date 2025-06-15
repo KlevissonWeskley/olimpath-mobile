@@ -8,6 +8,7 @@ import { COLORS } from "../../constants/colors"
 import { api } from "../../lib/axios"
 import { FinishedQuiz } from "../quiz/components/finished-quiz"
 import { SimulatedContainer } from "./styles"
+import { useUser } from "@clerk/clerk-expo"
 
 type SimulatedProps = {
   simulated: {
@@ -31,6 +32,7 @@ export function Simulated() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [answers, setAnswers] = useState<string[]>([])
   const [showResult, setShowResult] = useState(false)
+  const { user } = useUser()
 
   useEffect(() => {
     async function fetchSimulated() {
@@ -67,8 +69,18 @@ export function Simulated() {
     setAnswers(updatedAnswers)
   }
 
-  function goToNext() {
+  async function goToNext() {
     if (isLastQuestion) {
+      try {
+        const userId = user?.id
+        await api.post(`/gamification/users/${userId}/simulated/score`, {
+          correctAnswers: answers.filter((a, i) => a === simulated?.questions[i].correctAnswer).length,
+          totalQuestions: simulated?.questions.length
+        })
+      } catch (err: any) {
+        console.log("Erro ao registrar pontuação:", err?.response?.data || err.message)
+      }
+
       setShowResult(true)
     } else {
       setCurrentIndex(prev => prev + 1)
@@ -100,7 +112,7 @@ export function Simulated() {
 
       <SimulatedContainer>
         <TextBase variant="bold" size={16} style={{ marginBottom: 16 }} color={COLORS.gray100}>
-          {currentQuestion.question}
+          {currentQuestion.id} - {currentQuestion.question}
         </TextBase>
 
         {currentQuestion.options.map((option, index) => (

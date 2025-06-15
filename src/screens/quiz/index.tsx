@@ -8,6 +8,7 @@ import { TextBase } from "../../components/text"
 import { COLORS } from "../../constants/colors"
 import { FinishedQuiz } from "./components/finished-quiz"
 import { api } from "../../lib/axios"
+import { useUser } from "@clerk/clerk-expo"
 
 type QuizProps = {
   quizTitle: string
@@ -27,6 +28,7 @@ export function Quiz() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [answers, setAnswers] = useState<string[]>([])
   const [showResult, setShowResult] = useState(false)
+  const { user } = useUser()
 
   const navigation = useNavigation()
 
@@ -65,8 +67,15 @@ export function Quiz() {
     setAnswers(updatedAnswers)
   }
 
-  function goToNext() {
+  async function goToNext() {
     if (isLastQuestion) {
+      try {
+        const userId = user?.id
+        await api.get(`/gamification/users/${userId}/quiz/score`)
+      } catch (err: any) {
+        console.log("Erro ao registrar pontuação:", err?.response?.data || err.message)
+      }
+
       setShowResult(true)
     } else {
       setCurrentIndex(prev => prev + 1)
