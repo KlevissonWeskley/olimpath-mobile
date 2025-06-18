@@ -56,5 +56,9 @@ npx expo start
 # Se for rodar em um computador Desktop que está conectado por rede LAN, use esse comando
 npx expo start --tunnel
 
-# Abra no seu celular com o app Expo Go ou emulador.
+# Baixe o APK Development Build do projeto:
+https://expo.dev/artifacts/eas/opSazXQWThk7VksGHUnfHq.apk
+
+Você pode usar sua própria conta do Expo para rodar o projeto.
+
 
