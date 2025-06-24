@@ -1,6 +1,6 @@
 # 📱 OlimPath - Mobile
 
-## Link pra download do APK
+## Link pra download do APK (OlimPath)
 https://expo.dev/artifacts/eas/e3rEuwhgNhRBdAwgWF1W39.apk
 
 O **OlimPath** é um aplicativo mobile feito com **React Native (Expo)** voltado para ajudar alunos do ensino médio, especialmente de escolas públicas, a se prepararem para olimpíadas acadêmicas como:
@@ -56,8 +56,10 @@ npx expo start
 # Se for rodar em um computador Desktop que está conectado por rede LAN, use esse comando
 npx expo start --tunnel
 
-# Baixe o APK Development Build do projeto:
+# Baixe o APK Development Build do projeto - Esse é um APK do Expo, necessário para rodar o projeto:
 https://expo.dev/artifacts/eas/opSazXQWThk7VksGHUnfHq.apk
+
+# Depois de rodar o projeto, coloque o link gerado pelo Expo no APK do Expo Development Build
 
 Você pode usar sua própria conta do Expo para rodar o projeto.
 
