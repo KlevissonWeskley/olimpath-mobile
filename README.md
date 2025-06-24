@@ -47,8 +47,7 @@ O app oferece **videoaulas**, **simulados com base em provas anteriores**, **bib
 git clone https://github.com/KlevissonWeskley/olimpath-mobile.git
 cd olimpath-mobile
 
-# Atenção: o arquivo .env que deixamos são de chaves de TESTE, que fizemos EXCLUSIVAMENTE
-para o uso no SEDUCKATHON, elas não comprometem de forma alguma a SEGURANÇA da aplicação.
+# Atenção: o arquivo .env que deixamos são de chaves de TESTE, que fizemos EXCLUSIVAMENTE para o uso no SEDUCKATHON, elas não comprometem de forma alguma a SEGURANÇA da aplicação.
 
 # 2. Instale as dependências
 npm install
